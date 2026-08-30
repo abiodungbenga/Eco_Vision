@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"/c/Users/Abiodun Gbenga/AppData/Local/Pub/Cache/git/vmodal_sdk_flutter-d32cbc9d6871eec4396196b2973b47b97fbe25f6\" && sed -n '300,420p' example/01_full_app/README.md)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter test *)"
+    ]
+  }
+}
