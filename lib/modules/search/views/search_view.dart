@@ -36,19 +36,64 @@ class SearchView extends GetView<SearchViewController> {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final isCompact = constraints.maxWidth < 420;
+                    
+                    final imagePreview = Obx(() {
+                      final file = controller.referenceImage.value;
+                      if (file == null) return const SizedBox.shrink();
+                      
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Stack(
+                          alignment: Alignment.topRight,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                file,
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: controller.clearReferenceImage,
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    });
+
                     final input = Expanded(
                       child: TextField(
                         controller: controller.queryTextController,
                         textInputAction: TextInputAction.search,
                         onSubmitted: (_) => controller.performSearch(),
                         decoration: const InputDecoration(
-                          hintText: 'e.g. "elephants near water"',
+                          hintText: 'Search or add reference image...',
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
                           filled: false,
                         ),
                       ),
+                    );
+
+                    final imageButton = IconButton(
+                      icon: const Icon(Icons.add_a_photo_rounded),
+                      tooltip: 'Add visual reference',
+                      onPressed: controller.pickReferenceImage,
+                      color: const Color(0xFF1B4D3E),
                     );
 
                     final searchButton = Obx(
@@ -70,7 +115,9 @@ class SearchView extends GetView<SearchViewController> {
                                 size: 24,
                               ),
                               const SizedBox(width: 10),
+                              imagePreview,
                               input,
+                              imageButton,
                             ],
                           ),
                           const SizedBox(height: 4),
@@ -87,7 +134,10 @@ class SearchView extends GetView<SearchViewController> {
                           size: 24,
                         ),
                         const SizedBox(width: 10),
+                        imagePreview,
                         input,
+                        imageButton,
+                        const SizedBox(width: 8),
                         searchButton,
                       ],
                     );

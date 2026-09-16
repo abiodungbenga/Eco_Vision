@@ -1,5 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../../app/routes/app_routes.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/errors/app_exception.dart';
@@ -22,6 +27,8 @@ class SearchViewController extends GetxController {
   final totalMatches = 0.obs;
   final errorMessage = ''.obs;
 
+  final referenceImage = Rxn<File>();
+
   VideoModel? get currentVideo => videoService.currentVideo;
 
   @override
@@ -35,10 +42,35 @@ class SearchViewController extends GetxController {
     performSearch();
   }
 
+  Future<void> pickReferenceImage() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.image,
+      );
+
+      if (result.isNotEmpty) {
+        final file = result.first;
+        if (file.path != null) {
+          referenceImage.value = File(file.path!);
+          // Clear text query when picking an image to indicate image search
+          queryTextController.clear();
+        }
+      }
+    } catch (e) {
+      SnackbarUtils.showError('Failed to pick image: $e');
+    }
+  }
+
+  void clearReferenceImage() {
+    referenceImage.value = null;
+  }
+
   Future<void> performSearch() async {
     final query = queryTextController.text.trim();
-    if (query.isEmpty) {
-      SnackbarUtils.showInfo('Please enter a search query.');
+    final image = referenceImage.value;
+
+    if (query.isEmpty && image == null) {
+      SnackbarUtils.showInfo('Please enter a search query or pick a reference image.');
       return;
     }
 
@@ -57,11 +89,18 @@ class SearchViewController extends GetxController {
       isSearching.value = true;
       hasSearched.value = true;
       errorMessage.value = '';
-      activeQuery.value = query;
+      activeQuery.value = query.isNotEmpty ? query : 'Image Reference';
       searchResults.clear();
+
+      String? imageBase64;
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        imageBase64 = base64Encode(bytes);
+      }
 
       final response = await vmodalService.searchVideo(
         query: query,
+        imageQuery: imageBase64,
         collectionName: video.collectionName,
         streamName: video.streamName,
       );
@@ -82,7 +121,7 @@ class SearchViewController extends GetxController {
 
       searchResults.value = SearchResultModel.resolveTimestamps(
         hits,
-        query: query,
+        query: activeQuery.value,
         videoPath: video.filePath,
       );
     } on SearchException catch (e) {

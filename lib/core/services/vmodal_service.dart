@@ -376,44 +376,50 @@ class VModalService extends GetxService {
     }
   }
 
-  /// Perform natural-language semantic video search across indexed collection.
+  /// Perform natural-language or visual semantic video search.
   ///
   /// Search sources are resolved from the backend rather than hardcoded:
   /// requesting a modality that was never indexed makes V-Modal 404 the entire
   /// request. The LanceDB version is retried from newest to oldest, because a
   /// freshly minted version can be advertised before its table exists.
   Future<SearchResponse> searchVideo({
-    required String query,
+    String? query,
+    String? imageQuery,
     String? collectionName,
     String? streamName,
   }) async {
     if (!_isConfigured.value) {
       throw VModalServiceException('V-Modal SDK is not configured.');
     }
-    final cleanQuery = query.trim();
-    if (cleanQuery.isEmpty) {
-      throw SearchException('Search query cannot be empty.');
+
+    final cleanQuery = query?.trim() ?? '';
+    final hasImage = imageQuery != null && imageQuery.isNotEmpty;
+
+    if (cleanQuery.isEmpty && !hasImage) {
+      throw SearchException('Search query or reference image is required.');
     }
 
     final col = collectionName ?? currentCollectionName;
     final stm = streamName ?? currentStreamName;
     final readiness = await resolveReadiness(collectionName: collectionName);
 
-    // The only local block left. Everything else is attempted: refusing to
-    // call gives the user no information, while a real failure now comes back
-    // with the backend's own reason attached.
     if (!readiness.exists) {
       throw SearchException(
         'Collection "$col" does not exist for this API key yet. '
         'Upload and index a video first.',
       );
     }
-    if (readiness.searchSources.isEmpty) {
-      // Only reachable if AppConstants.defaultIndexType stops being a modality
-      // this service knows how to map — a wiring bug, not something to wait on.
+
+    // When searching by image, we specifically need the 'image' source to be available.
+    if (hasImage && !readiness.searchSources.contains('image')) {
       throw SearchException(
-        'No searchable modality is configured for "$col" '
-        '(indexed as "${AppConstants.defaultIndexType}").',
+        'Image search is not available for "$col". Make sure it was indexed with visual features.',
+      );
+    }
+
+    if (readiness.searchSources.isEmpty) {
+      throw SearchException(
+        'No searchable modality is configured for "$col".',
       );
     }
 
@@ -430,7 +436,7 @@ class VModalService extends GetxService {
 
       developer.log(
         'Search request: project=$currentProjectId, collection=$col, '
-        'stream=$stm, query="$cleanQuery", '
+        'stream=$stm, query="$cleanQuery", hasImage=$hasImage, '
         'sources=${readiness.searchSources}, limit=50, '
         'versionLancedb=$version (attempt ${i + 1}/${attempts.length})',
         name: 'VModalService.search',
@@ -440,7 +446,8 @@ class VModalService extends GetxService {
         final response = await scope.search(
           cleanQuery,
           options: ScopedSearchOptions(
-            searchSources: readiness.searchSources,
+            imageQuery: imageQuery,
+            searchSources: hasImage ? ['image'] : readiness.searchSources,
             limit: 50,
             versionLancedb: version,
           ),
@@ -448,7 +455,7 @@ class VModalService extends GetxService {
 
         developer.log(
           'Search response: version=$version, cntTotal=${response.cntTotal}, '
-          'executionTimeMs=${response.executionTimeMs}, data=${response.data}',
+          'executionTimeMs=${response.executionTimeMs}',
           name: 'VModalService.search',
         );
         return response;

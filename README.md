@@ -10,6 +10,7 @@ WildSense is a premium proof-of-concept demonstrating how environmental research
 - **Smart Upload**: Select and upload videos directly to V-Modal.
 - **AI Indexing**: Automatic semantic indexing of video content.
 - **Semantic Search**: Search for moments like "elephants near water" without tags or keywords.
+- **Visual Reference Search**: Use an image (e.g., a photo of a specific leopard) to find all matching appearances across your footage.
 - **Moment Navigation**: Jump directly to the relevant timestamp in search results.
 
 ## Architecture
@@ -28,6 +29,16 @@ WildSense follows a feature-first architecture using **GetX**:
 - **GetX**: State management, routing, and dependency injection.
 - **V-Modal SDK**: Semantic video search and indexing.
 - **Video Player**: Native video playback.
+
+## Visual Reference Search (Image-to-Video)
+
+WildSense now supports searching by visual similarity. This is useful for finding specific individuals or environmental patterns that are hard to describe in words.
+
+1. Navigate to the **Search** screen.
+2. Tap the **Camera/Photo icon** in the search bar.
+3. Select an image from your gallery.
+4. The search engine will now use the visual features of that image to query your video index.
+5. Results will show every timestamp where a similar subject appears.
 
 ## Setup
 
@@ -50,7 +61,7 @@ WildSense follows a feature-first architecture using **GetX**:
 1. **Home**: View the wildlife intelligence dashboard.
 2. **Add**: Upload a new piece of field footage.
 3. **Index**: Wait for V-Modal to complete semantic analysis.
-4. **Search**: Enter a query like "animals grazing".
+4. **Search**: Enter a natural language query or tap the **Visual Reference** icon to search using an image.
 5. **Discover**: Tap a result to jump directly to that moment in the video.
 
 ---
