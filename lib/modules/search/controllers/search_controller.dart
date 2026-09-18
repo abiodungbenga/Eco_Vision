@@ -1,10 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../app/routes/app_routes.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/errors/app_exception.dart';
@@ -28,13 +26,19 @@ class SearchViewController extends GetxController {
   final errorMessage = ''.obs;
 
   final referenceImage = Rxn<File>();
+  final isGlobalSearch = false.obs;
 
   VideoModel? get currentVideo => videoService.currentVideo;
 
   @override
   void onInit() {
     super.onInit();
-    queryTextController.text = AppConstants.sampleQueries.first;
+    if (AppConstants.semanticChips.isNotEmpty) {
+      final firstQuery = AppConstants.semanticChips.first['query'];
+      if (firstQuery != null) {
+        queryTextController.text = firstQuery;
+      }
+    }
   }
 
   void selectSampleQuery(String sample) {
@@ -98,12 +102,18 @@ class SearchViewController extends GetxController {
         imageBase64 = base64Encode(bytes);
       }
 
-      final response = await vmodalService.searchVideo(
-        query: query,
-        imageQuery: imageBase64,
-        collectionName: video.collectionName,
-        streamName: video.streamName,
-      );
+      final response = isGlobalSearch.value
+          ? await vmodalService.searchCollection(
+              query: query,
+              imageQuery: imageBase64,
+              collectionName: video.collectionName,
+            )
+          : await vmodalService.searchVideo(
+              query: query,
+              imageQuery: imageBase64,
+              collectionName: video.collectionName,
+              streamName: video.streamName,
+            );
 
       executionTimeMs.value = response.executionTimeMs;
       totalMatches.value = response.cntTotal;
@@ -124,6 +134,13 @@ class SearchViewController extends GetxController {
         query: activeQuery.value,
         videoPath: video.filePath,
       );
+
+      // Resolve thumbnails for results
+      final updatedResults = await vmodalService.resolveThumbnails(
+        searchResults,
+        collectionName: video.collectionName,
+      );
+      searchResults.value = updatedResults;
     } on SearchException catch (e) {
       // VModalService already translated API failures (including the
       // missing-LanceDB 404) into a message worth showing.

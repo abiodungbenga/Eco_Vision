@@ -3,12 +3,15 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/services/video_service.dart';
 import '../../../core/services/vmodal_service.dart';
+import '../../../core/services/discovery_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../shared/models/video_model.dart';
+import '../../../shared/models/search_result_model.dart';
 
 class HomeController extends GetxController {
   final VModalService vmodalService = Get.find<VModalService>();
   final VideoService videoService = Get.find<VideoService>();
+  final DiscoveryService discoveryService = Get.find<DiscoveryService>();
 
   final apiKeyController = TextEditingController();
   final isConnecting = false.obs;
@@ -21,6 +24,7 @@ class HomeController extends GetxController {
     super.onInit();
     if (vmodalService.isConfigured) {
       apiKeyController.text = vmodalService.apiKey;
+      discoveryService.fetchSightingsFeed();
     }
   }
 
@@ -34,12 +38,42 @@ class HomeController extends GetxController {
     try {
       isConnecting.value = true;
       await vmodalService.configure(key);
+      discoveryService.fetchSightingsFeed();
       SnackbarUtils.showSuccess('V-Modal SDK configured successfully!');
     } catch (e) {
       SnackbarUtils.showError('Configuration failed: ${e.toString()}');
     } finally {
       isConnecting.value = false;
     }
+  }
+
+  void playMoment(SearchResultModel result) {
+    // Determine the video path. Priority: 
+    // 1. Path already in result (from previous search in current session)
+    // 2. Current active video if filenames match
+    String? path = result.videoPath.isNotEmpty ? result.videoPath : null;
+    
+    if (path == null && currentVideo != null && result.videoFileName == currentVideo!.fileName) {
+      path = currentVideo!.filePath;
+    }
+
+    if (path == null || path.isEmpty) {
+      SnackbarUtils.showInfo('Select the video "${result.videoFileName}" in the archive to play.');
+      return;
+    }
+
+    Get.toNamed(
+      AppRoutes.player,
+      arguments: {
+        'videoPath': path,
+        'videoName': result.videoFileName,
+        'timestamp': result.timestampDuration,
+        'timestampText': result.formattedTimestamp,
+        'title': result.title,
+        'hasTimestamp': result.hasTimestamp,
+        'isTimestampApproximate': result.isTimestampApproximate,
+      },
+    );
   }
 
   void goToUpload() {

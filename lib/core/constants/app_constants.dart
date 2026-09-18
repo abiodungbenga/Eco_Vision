@@ -8,14 +8,12 @@ class AppConstants {
   static const String defaultStreamName = 'nature_footage';
   static const String defaultIndexType = 'vid_img_emb';
 
-  // Sample queries for research UI
-  static const List<String> sampleQueries = [
-    'elephants near water',
-    'birds in the forest',
-    'people walking',
-    'vehicles',
-    'animals drinking water',
-    'cars passing',
-    'birds flying',
+  // Research-themed semantic chips
+  static const List<Map<String, String>> semanticChips = [
+    {'label': '🐾 Predation', 'query': 'hunting predation animal attack'},
+    {'label': '💧 Drinking', 'query': 'animal drinking water'},
+    {'label': '👤 Human Intrusion', 'query': 'people walking human presence'},
+    {'label': '🌙 Nocturnal', 'query': 'animals at night low light'},
+    {'label': '🐘 Herd Activity', 'query': 'group of animals herd social interaction'},
   ];
 }

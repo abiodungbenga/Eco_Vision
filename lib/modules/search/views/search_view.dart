@@ -11,6 +11,66 @@ import '../controllers/search_controller.dart';
 class SearchView extends GetView<SearchViewController> {
   const SearchView({super.key});
 
+  Widget _buildSearchControls() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Research Filters:',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF64748B),
+              ),
+            ),
+            Obx(() => Row(
+                  children: [
+                    const Text(
+                      'Global Archive',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                    Switch.adaptive(
+                      value: controller.isGlobalSearch.value,
+                      onChanged: (v) => controller.isGlobalSearch.value = v,
+                      activeTrackColor: const Color(0xFF1B4D3E),
+                    ),
+                  ],
+                )),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: AppConstants.semanticChips.map((chip) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: ActionChip(
+                  label: Text(
+                    chip['label']!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  backgroundColor: const Color(0xFFF1F5F9),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  onPressed: () {
+                    controller.queryTextController.text = chip['query']!;
+                    controller.performSearch();
+                  },
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -147,38 +207,9 @@ class SearchView extends GetView<SearchViewController> {
             ),
             const SizedBox(height: 14),
 
-            // Example Queries / Suggestion Chips
-            const Text(
-              'Sample Research Queries:',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: AppConstants.sampleQueries.map((sample) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ActionChip(
-                      label: Text(
-                        sample,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                      backgroundColor: const Color(0xFFF1F5F9),
-                      side: const BorderSide(color: Color(0xFFE2E8F0)),
-                      onPressed: () => controller.selectSampleQuery(sample),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+            // Global Archive Search Toggle & Semantic Chips
+            _buildSearchControls(),
+
             const SizedBox(height: 16),
 
             // Search Results Summary Banner or Loading / Empty States

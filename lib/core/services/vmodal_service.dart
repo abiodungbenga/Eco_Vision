@@ -6,6 +6,7 @@ import 'package:vmodal_sdk_flutter/vmodal_sdk_flutter.dart';
 
 import '../constants/app_constants.dart';
 import '../errors/app_exception.dart';
+import '../../shared/models/search_result_model.dart';
 
 /// What a collection can actually be searched for, read from the backend.
 ///
@@ -427,6 +428,57 @@ class VModalService extends GetxService {
       collectionName: collectionName,
       streamName: streamName,
     );
+    return _searchInternal(
+      scope: scope,
+      query: cleanQuery,
+      imageQuery: imageQuery,
+      readiness: readiness,
+      collectionName: col,
+      streamName: stm,
+    );
+  }
+
+  /// Searches the entire collection across all streams.
+  Future<SearchResponse> searchCollection({
+    String? query,
+    String? imageQuery,
+    String? collectionName,
+  }) async {
+    if (!_isConfigured.value) {
+      throw VModalServiceException('V-Modal SDK is not configured.');
+    }
+
+    final col = collectionName ?? currentCollectionName;
+    final readiness = await resolveReadiness(collectionName: collectionName);
+
+    if (!readiness.exists) {
+      throw SearchException('Collection "$col" does not exist.');
+    }
+
+    // We use the underlying client to search without a specific stream filter.
+    // However, the SDK's SearchRequest defaults streamName to 'astream'.
+    // We'll target the collection-level search if supported by the backend.
+    final scope = getScope(collectionName: col, streamName: ''); 
+    
+    return _searchInternal(
+      scope: scope,
+      query: query?.trim() ?? '',
+      imageQuery: imageQuery,
+      readiness: readiness,
+      collectionName: col,
+      streamName: '',
+    );
+  }
+
+  Future<SearchResponse> _searchInternal({
+    required VModalScope scope,
+    required String query,
+    String? imageQuery,
+    required CollectionReadiness readiness,
+    required String collectionName,
+    required String streamName,
+  }) async {
+    final hasImage = imageQuery != null && imageQuery.isNotEmpty;
     final attempts = readiness.candidateVersions;
     SearchException? missingTableFailure;
 
@@ -434,17 +486,9 @@ class VModalService extends GetxService {
       final version = attempts[i];
       final isLastAttempt = i == attempts.length - 1;
 
-      developer.log(
-        'Search request: project=$currentProjectId, collection=$col, '
-        'stream=$stm, query="$cleanQuery", hasImage=$hasImage, '
-        'sources=${readiness.searchSources}, limit=50, '
-        'versionLancedb=$version (attempt ${i + 1}/${attempts.length})',
-        name: 'VModalService.search',
-      );
-
       try {
         final response = await scope.search(
-          cleanQuery,
+          query,
           options: ScopedSearchOptions(
             imageQuery: imageQuery,
             searchSources: hasImage ? ['image'] : readiness.searchSources,
@@ -452,21 +496,8 @@ class VModalService extends GetxService {
             versionLancedb: version,
           ),
         );
-
-        developer.log(
-          'Search response: version=$version, cntTotal=${response.cntTotal}, '
-          'executionTimeMs=${response.executionTimeMs}',
-          name: 'VModalService.search',
-        );
         return response;
       } on ApiException catch (e) {
-        developer.log(
-          'Search API error: version=$version, status=${e.statusCode}, '
-          'message=${e.message}, body=${e.body}',
-          name: 'VModalService.search',
-          error: e,
-        );
-
         final body = '${e.body}'.toLowerCase();
         final isMissingTable =
             body.contains('missing lancedb') || body.contains('missing index');
@@ -479,31 +510,55 @@ class VModalService extends GetxService {
           );
         }
 
-        // This version has no table for these sources. An older published
-        // version may, so keep walking before reporting failure.
         missingTableFailure = SearchException(
-          'V-Modal has no finished index for "$col" yet '
-          '(sources ${readiness.searchSources}, versions tried '
-          '${attempts.map((v) => v ?? 'default').toList()}). '
-          'Indexing may still be finishing — wait a moment and search again, '
-          'or re-index this video.',
+          'Indexing may still be finishing — wait a moment and search again.',
           code: '${e.statusCode}',
           details: e.body,
         );
         if (isLastAttempt) throw missingTableFailure;
       } catch (e) {
-        developer.log(
-          'Search SDK error: ${e.toString()}',
-          name: 'VModalService.search',
-          error: e,
-          stackTrace: StackTrace.current,
-        );
         throw SearchException('Search request failed: ${e.toString()}');
       }
     }
+    throw missingTableFailure ?? SearchException('Search failed.');
+  }
 
-    // Unreachable: the loop returns, or throws on its last attempt.
-    throw missingTableFailure ?? SearchException('Search failed for "$col".');
+  /// Resolves temporary image URLs for search results.
+  Future<List<SearchResultModel>> resolveThumbnails(
+    List<SearchResultModel> results, {
+    String? collectionName,
+  }) async {
+    if (!_isConfigured.value || _client == null) return results;
+
+    final col = collectionName ?? currentCollectionName;
+
+    try {
+      final records = results.map((r) {
+        // Build the same record SearchResultModel.resolveTimestamps would build internally
+        final timestamp = r.absoluteTimestampMs?.toString();
+        return <String, Object?>{
+          'mode': 'vid_file',
+          'group_name': '$currentProjectId$_backendSeparator$col',
+          'modality': 'vid_img',
+          'stream_name': r.rawHit['stream_name'] ?? currentStreamName,
+          'filename': r.videoFileName,
+          'ts_unix_13digits': timestamp,
+        };
+      }).toList();
+
+      final urlsResponse = await _client!.images.getUrlBulk(records);
+      
+      final updatedResults = <SearchResultModel>[];
+      for (var i = 0; i < results.length; i++) {
+        final row = urlsResponse.records[i];
+        final url = '${row['url_pre_signed'] ?? ''}'.trim();
+        updatedResults.add(results[i].copyWith(thumbnailUrl: url.isNotEmpty ? url : null));
+      }
+      return updatedResults;
+    } catch (e) {
+      developer.log('Thumbnail resolution failed: $e', name: 'VModalService');
+      return results;
+    }
   }
 
   /// Disposes active client and project resources safely.

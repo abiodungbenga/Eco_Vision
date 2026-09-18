@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:get/get.dart';
 import '../models/search_result_model.dart';
+import '../../core/services/discovery_service.dart';
 
 class SearchResultCard extends StatelessWidget {
   final SearchResultModel result;
@@ -14,6 +16,7 @@ class SearchResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final discoveryService = Get.find<DiscoveryService>();
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -138,19 +141,34 @@ class SearchResultCard extends StatelessWidget {
               ),
 
               const SizedBox(width: 8),
-              // Watch moment arrow icon button
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7FAFC),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: Color(0xFF1B4D3E),
-                ),
+              
+              // Bookmark and Arrow
+              Column(
+                children: [
+                  Obx(() => IconButton(
+                        icon: Icon(
+                          discoveryService.isBookmarked(result)
+                              ? Icons.bookmark_rounded
+                              : Icons.bookmark_border_rounded,
+                          color: const Color(0xFF1B4D3E),
+                          size: 20,
+                        ),
+                        onPressed: () => discoveryService.toggleBookmark(result),
+                      )),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7FAFC),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: Color(0xFF1B4D3E),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

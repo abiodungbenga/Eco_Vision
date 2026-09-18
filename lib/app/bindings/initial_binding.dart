@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../../core/services/indexing_service.dart';
 import '../../core/services/video_service.dart';
 import '../../core/services/vmodal_service.dart';
+import '../../core/services/discovery_service.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -15,5 +16,6 @@ class InitialBinding extends Bindings {
       IndexingService(vmodalService: vmodal, videoService: videos),
       permanent: true,
     );
+    Get.put<DiscoveryService>(DiscoveryService(), permanent: true);
   }
 }

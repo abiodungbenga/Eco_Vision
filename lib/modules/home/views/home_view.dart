@@ -4,10 +4,180 @@ import 'package:get/get.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../shared/widgets/video_card.dart';
+import '../../../shared/models/search_result_model.dart';
 import '../controllers/home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
+
+  Widget _buildDiscoverySection() {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            dividerColor: Colors.transparent,
+            indicatorColor: const Color(0xFF1B4D3E),
+            labelColor: const Color(0xFF1B4D3E),
+            unselectedLabelColor: const Color(0xFF64748B),
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            tabs: const [
+              Tab(text: 'Discovery Feed'),
+              Tab(text: 'Saved Observations'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 300,
+            child: TabBarView(
+              children: [
+                _buildSightingsFeed(),
+                _buildSavedObservations(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSightingsFeed() {
+    return Obx(() {
+      if (controller.discoveryService.isFetchingFeed.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (controller.discoveryService.sightingsFeed.isEmpty) {
+        return _buildEmptyDiscovery('No recent sightings detected across your archive.');
+      }
+      return ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: controller.discoveryService.sightingsFeed.length,
+        itemBuilder: (context, index) {
+          final result = controller.discoveryService.sightingsFeed[index];
+          return _buildMomentCard(result);
+        },
+      );
+    });
+  }
+
+  Widget _buildSavedObservations() {
+    return Obx(() {
+      if (controller.discoveryService.savedObservations.isEmpty) {
+        return _buildEmptyDiscovery('You haven\'t saved any observations yet.');
+      }
+      return ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: controller.discoveryService.savedObservations.length,
+        itemBuilder: (context, index) {
+          final result = controller.discoveryService.savedObservations[index];
+          return _buildMomentCard(result);
+        },
+      );
+    });
+  }
+
+  Widget _buildMomentCard(SearchResultModel result) {
+    return GestureDetector(
+      onTap: () => controller.playMoment(result),
+      child: Container(
+        width: 220,
+        margin: const EdgeInsets.only(right: 16, bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  image: result.thumbnailUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(result.thumbnailUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : const DecorationImage(
+                          image: NetworkImage('https://images.unsplash.com/photo-1549366021-9f761d450616?auto=format&fit=crop&q=80&w=400'),
+                          fit: BoxFit.cover,
+                        ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Obx(() => IconButton(
+                            icon: Icon(
+                              controller.discoveryService.isBookmarked(result)
+                                  ? Icons.bookmark_rounded
+                                  : Icons.bookmark_border_rounded,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => controller.discoveryService.toggleBookmark(result),
+                          )),
+                    ),
+                    Center(
+                      child: Icon(Icons.play_circle_fill_rounded, color: Colors.white.withValues(alpha: 0.8), size: 42),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    result.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    result.formattedTimestamp,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyDiscovery(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.auto_awesome_rounded, color: Color(0xFFCBD5E1), size: 32),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -235,12 +405,17 @@ class HomeView extends GetView<HomeController> {
                 );
               }
 
-              return VideoCard(
+            return VideoCard(
                 video: video,
                 onUploadTap: controller.goToUpload,
                 onSearchTap: controller.goToSearch,
               );
             }),
+            const SizedBox(height: 28),
+
+            // Tabs for Sightings and Bookmarks
+            _buildDiscoverySection(),
+
             const SizedBox(height: 28),
 
             // Research Guide Info Card

@@ -43,6 +43,7 @@ class SearchResultModel {
   final String scoreText;
   final String videoFileName;
   final String videoPath;
+  final String? thumbnailUrl;
   final Map<String, dynamic> rawHit;
 
   const SearchResultModel({
@@ -59,8 +60,69 @@ class SearchResultModel {
     required this.scoreText,
     required this.videoFileName,
     required this.videoPath,
+    this.thumbnailUrl,
     required this.rawHit,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'query': query,
+      'title': title,
+      'description': description,
+      'formattedTimestamp': formattedTimestamp,
+      'timestampDurationMs': timestampDuration.inMilliseconds,
+      'timestampMs': timestampMs,
+      'absoluteTimestampMs': absoluteTimestampMs,
+      'isTimestampApproximate': isTimestampApproximate,
+      'hasTimestamp': hasTimestamp,
+      'scoreText': scoreText,
+      'videoFileName': videoFileName,
+      'videoPath': videoPath,
+      'thumbnailUrl': thumbnailUrl,
+      'rawHit': rawHit,
+    };
+  }
+
+  factory SearchResultModel.fromJson(Map<String, dynamic> json) {
+    return SearchResultModel(
+      id: json['id'],
+      query: json['query'],
+      title: json['title'],
+      description: json['description'],
+      formattedTimestamp: json['formattedTimestamp'],
+      timestampDuration: Duration(milliseconds: json['timestampDurationMs']),
+      timestampMs: json['timestampMs'],
+      absoluteTimestampMs: json['absoluteTimestampMs'],
+      isTimestampApproximate: json['isTimestampApproximate'],
+      hasTimestamp: json['hasTimestamp'],
+      scoreText: json['scoreText'],
+      videoFileName: json['videoFileName'],
+      videoPath: json['videoPath'],
+      thumbnailUrl: json['thumbnailUrl'],
+      rawHit: json['rawHit'],
+    );
+  }
+
+  SearchResultModel copyWith({String? thumbnailUrl}) {
+    return SearchResultModel(
+      id: id,
+      query: query,
+      title: title,
+      description: description,
+      formattedTimestamp: formattedTimestamp,
+      timestampDuration: timestampDuration,
+      timestampMs: timestampMs,
+      absoluteTimestampMs: absoluteTimestampMs,
+      isTimestampApproximate: isTimestampApproximate,
+      hasTimestamp: hasTimestamp,
+      scoreText: scoreText,
+      videoFileName: videoFileName,
+      videoPath: videoPath,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      rawHit: rawHit,
+    );
+  }
 
   /// Values at or above this are wall-clock epochs, not in-video offsets:
   /// 1e9 is 31 years as seconds and 11 days as milliseconds, and no clip is

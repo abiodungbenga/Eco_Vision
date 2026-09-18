@@ -10,6 +10,10 @@ WildSense is a premium proof-of-concept demonstrating how environmental research
 - **Smart Upload**: Select and upload videos directly to V-Modal.
 - **AI Indexing**: Automatic semantic indexing of video content.
 - **Semantic Search**: Search for moments like "elephants near water" without tags or keywords.
+- **Global Archive Search**: Search across your entire research library in one query.
+- **Research Semantic Chips**: One-tap filters for predation, drinking, human intrusion, and more.
+- **Sightings Discover Feed**: A live aggregate feed of detected moments from all footage.
+- **Observation Bookmarks**: Save and organize important field moments into reports.
 - **Visual Reference Search**: Use an image (e.g., a photo of a specific leopard) to find all matching appearances across your footage.
 - **Moment Navigation**: Jump directly to the relevant timestamp in search results.
 
@@ -39,6 +43,15 @@ WildSense now supports searching by visual similarity. This is useful for findin
 3. Select an image from your gallery.
 4. The search engine will now use the visual features of that image to query your video index.
 5. Results will show every timestamp where a similar subject appears.
+
+## Global Archive & Semantic Filters
+
+WildSense allows researchers to discover patterns across many videos at once.
+
+1.  **Global Archive Toggle**: In the **Search** screen, flip the "Global Archive" switch to query your entire indexed library instead of just the currently selected video.
+2.  **Semantic Chips**: Use the quick-tap filters like `🐾 Predation` or `💧 Drinking` to instantly trigger AI searches for common wildlife behaviors.
+3.  **Discovery Feed**: Check the **Home** screen for a live "Discovery Feed" of recently indexed wildlife activity from all your footage.
+4.  **Bookmarks**: Tap the bookmark icon on any search result to save it to your **Saved Observations** for later analysis.
 
 ## Setup
 
