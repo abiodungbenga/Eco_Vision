@@ -13,8 +13,9 @@ WildSense is a premium proof-of-concept demonstrating how environmental research
 - **Global Archive Search**: Search across your entire research library in one query.
 - **Research Semantic Chips**: One-tap filters for predation, drinking, human intrusion, and more.
 - **Sightings Discover Feed**: A live aggregate feed of detected moments from all footage.
-- **Observation Bookmarks**: Save and organize important field moments into reports.
+- **Observation Bookmarks**: Save and organize important field moments into reports with local persistence.
 - **Visual Reference Search**: Use an image (e.g., a photo of a specific leopard) to find all matching appearances across your footage.
+- **Real-Time AI Thumbnails**: Dynamic resolution of video frame previews for all search and discovery results.
 - **Moment Navigation**: Jump directly to the relevant timestamp in search results.
 
 ## Architecture
@@ -51,7 +52,15 @@ WildSense allows researchers to discover patterns across many videos at once.
 1.  **Global Archive Toggle**: In the **Search** screen, flip the "Global Archive" switch to query your entire indexed library instead of just the currently selected video.
 2.  **Semantic Chips**: Use the quick-tap filters like `🐾 Predation` or `💧 Drinking` to instantly trigger AI searches for common wildlife behaviors.
 3.  **Discovery Feed**: Check the **Home** screen for a live "Discovery Feed" of recently indexed wildlife activity from all your footage.
-4.  **Bookmarks**: Tap the bookmark icon on any search result to save it to your **Saved Observations** for later analysis.
+4.  **Bookmarks**: Tap the bookmark icon on any search result to save it to your **Saved Observations**. These are persisted locally and will be available even after restarting the app.
+
+## Data Persistence & Visual Previews
+
+WildSense is designed for long-term field research with robust data handling:
+
+- **Local Persistence**: Uses `localstore` to save your "Saved Observations" JSON database directly on your device. Your research work is never lost when the app closes.
+- **Dynamic AI Thumbnails**: Every search result and discovery moment automatically fetches its corresponding video frame from V-Modal. This provides immediate visual context before you even press play.
+- **Interactive Feed**: The Discovery Feed on the Home screen is fully interactive. Tap any moment to play it instantly or receive guidance on which archived video contains that sighting.
 
 ## Setup
 
