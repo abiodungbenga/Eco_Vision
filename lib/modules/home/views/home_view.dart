@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+
 import 'dart:io';
+
 import 'package:get/get.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../shared/widgets/video_card.dart';
+import '../../../shared/widgets/fullscreen_image_viewer.dart';
 import '../../../shared/models/search_result_model.dart';
 import '../controllers/home_controller.dart';
 
@@ -24,7 +27,10 @@ class HomeView extends GetView<HomeController> {
             indicatorColor: const Color(0xFF1B4D3E),
             labelColor: const Color(0xFF1B4D3E),
             unselectedLabelColor: const Color(0xFF64748B),
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
             tabs: const [
               Tab(text: 'Discovery Feed'),
               Tab(text: 'Saved Observations'),
@@ -34,10 +40,7 @@ class HomeView extends GetView<HomeController> {
           SizedBox(
             height: 300,
             child: TabBarView(
-              children: [
-                _buildSightingsFeed(),
-                _buildSavedObservations(),
-              ],
+              children: [_buildSightingsFeed(), _buildSavedObservations()],
             ),
           ),
         ],
@@ -51,14 +54,16 @@ class HomeView extends GetView<HomeController> {
         return const Center(child: CircularProgressIndicator());
       }
       if (controller.discoveryService.sightingsFeed.isEmpty) {
-        return _buildEmptyDiscovery('No recent sightings detected across your archive.');
+        return _buildEmptyDiscovery(
+          'No recent sightings detected across your archive.',
+        );
       }
       return ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: controller.discoveryService.sightingsFeed.length,
         itemBuilder: (context, index) {
           final result = controller.discoveryService.sightingsFeed[index];
-          return _buildMomentCard(result);
+          return _buildMomentCard(context, result);
         },
       );
     });
@@ -74,28 +79,17 @@ class HomeView extends GetView<HomeController> {
         itemCount: controller.discoveryService.savedObservations.length,
         itemBuilder: (context, index) {
           final result = controller.discoveryService.savedObservations[index];
-          return _buildMomentCard(result);
+          return _buildMomentCard(context, result);
         },
       );
     });
   }
 
-  Widget _buildMomentCard(SearchResultModel result) {
+  Widget _buildMomentCard(BuildContext context, SearchResultModel result) {
     final thumbUrl = result.thumbnailUrl;
-    ImageProvider? thumbImage;
-    if (thumbUrl != null && thumbUrl.isNotEmpty) {
-      if (thumbUrl.startsWith('http')) {
-        thumbImage = NetworkImage(thumbUrl);
-      } else {
-        thumbImage = FileImage(File(thumbUrl));
-      }
-    } else {
-      thumbImage = const NetworkImage(
-          'https://images.unsplash.com/photo-1549366021-9f761d450616?auto=format&fit=crop&q=80&w=400');
-    }
 
     return GestureDetector(
-      onTap: () => controller.playMoment(result),
+      onTap: () => FullscreenImageViewer.show(context, thumbUrl),
       child: Container(
         width: 220,
         margin: const EdgeInsets.only(right: 16, bottom: 8),
@@ -118,35 +112,42 @@ class HomeView extends GetView<HomeController> {
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(14)),
-                  image: DecorationImage(
-                    image: thumbImage,
-                    fit: BoxFit.cover,
-                    onError: (exception, stackTrace) {
-                      // Fallback if image fails to load
-                    },
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(14),
                   ),
+                  image: thumbUrl == null || thumbUrl.isEmpty
+                      ? null
+                      : DecorationImage(
+                          image: thumbUrl.startsWith('http')
+                              ? NetworkImage(thumbUrl)
+                              : FileImage(File(thumbUrl)),
+                          fit: BoxFit.cover,
+                        ),
                 ),
                 child: Stack(
                   children: [
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: Obx(() => IconButton(
-                            icon: Icon(
-                              controller.discoveryService.isBookmarked(result)
-                                  ? Icons.bookmark_rounded
-                                  : Icons.bookmark_border_rounded,
-                              color: Colors.white,
-                            ),
-                            onPressed: () =>
-                                controller.discoveryService.toggleBookmark(result),
-                          )),
+                      child: Obx(
+                        () => IconButton(
+                          icon: Icon(
+                            controller.discoveryService.isBookmarked(result)
+                                ? Icons.bookmark_rounded
+                                : Icons.bookmark_border_rounded,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => controller.discoveryService
+                              .toggleBookmark(result),
+                        ),
+                      ),
                     ),
-                    Center(
-                      child: Icon(Icons.play_circle_fill_rounded,
-                          color: Colors.white.withValues(alpha: 0.8), size: 42),
+                    const Center(
+                      child: Icon(
+                        Icons.fullscreen_rounded,
+                        color: Colors.white,
+                        size: 34,
+                      ),
                     ),
                   ],
                 ),
@@ -161,12 +162,18 @@ class HomeView extends GetView<HomeController> {
                     result.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    result.formattedTimestamp,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    'Animal image result',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
                 ],
               ),
@@ -182,7 +189,11 @@ class HomeView extends GetView<HomeController> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.auto_awesome_rounded, color: Color(0xFFCBD5E1), size: 32),
+          const Icon(
+            Icons.auto_awesome_rounded,
+            color: Color(0xFFCBD5E1),
+            size: 32,
+          ),
           const SizedBox(height: 8),
           Text(
             message,
@@ -337,12 +348,6 @@ class HomeView extends GetView<HomeController> {
                   isSecondary: true,
                   onPressed: controller.goToSearch,
                 );
-                final observationsButton = AppButton(
-                  label: 'Species Library',
-                  icon: Icons.pets_rounded,
-                  isSecondary: true,
-                  onPressed: controller.goToObservations,
-                );
                 final dashboardButton = AppButton(
                   label: 'Dashboard',
                   icon: Icons.bar_chart_rounded,
@@ -357,8 +362,6 @@ class HomeView extends GetView<HomeController> {
                       uploadButton,
                       const SizedBox(height: 10),
                       searchButton,
-                      const SizedBox(height: 10),
-                      observationsButton,
                       const SizedBox(height: 10),
                       dashboardButton,
                     ],
@@ -377,9 +380,9 @@ class HomeView extends GetView<HomeController> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: observationsButton),
-                        const SizedBox(width: 14),
                         Expanded(child: dashboardButton),
+                        const SizedBox(width: 14),
+                        const Expanded(child: SizedBox.shrink()),
                       ],
                     ),
                   ],
@@ -448,7 +451,7 @@ class HomeView extends GetView<HomeController> {
                 );
               }
 
-            return VideoCard(
+              return VideoCard(
                 video: video,
                 onUploadTap: controller.goToUpload,
                 onSearchTap: controller.goToSearch,

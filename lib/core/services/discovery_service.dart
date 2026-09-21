@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:localstore/localstore.dart';
+
 import '../../shared/models/search_result_model.dart';
 import 'vmodal_service.dart';
 import 'video_service.dart';
@@ -27,7 +28,12 @@ class DiscoveryService extends GetxService {
       final loaded = items.entries
           .map((e) => SearchResultModel.fromJson(e.value))
           .toList();
-      savedObservations.assignAll(await _enrichResultsWithLocalThumbnails(loaded));
+      final enriched = await _enrichResultsWithLocalThumbnails(loaded);
+      savedObservations.assignAll(
+        enriched
+            .where((result) => result.thumbnailUrl?.trim().isNotEmpty ?? false)
+            .toList(),
+      );
     }
   }
 
@@ -38,7 +44,9 @@ class DiscoveryService extends GetxService {
     try {
       isFetchingFeed.value = true;
       // Search for any "wildlife" or "animal" to get an aggregate feed
-      final response = await vmodalService.searchCollection(query: 'animal wildlife activity');
+      final response = await vmodalService.searchCollection(
+        query: 'animal wildlife activity',
+      );
 
       final hits = <Map<String, dynamic>>[];
       for (final rawHit in response.data) {
@@ -52,14 +60,19 @@ class DiscoveryService extends GetxService {
       final results = SearchResultModel.resolveTimestamps(
         hits,
         query: 'Sightings',
-        videoPath: '', 
+        videoPath: '',
       );
 
       // Resolve thumbnails for discovery feed from backend
       final remoteResults = await vmodalService.resolveThumbnails(results);
 
       // Override with local thumbnails where possible (using video_snapshot_generator)
-      sightingsFeed.value = await _enrichResultsWithLocalThumbnails(remoteResults);
+      final imageResults = remoteResults
+          .where((result) => result.thumbnailUrl?.trim().isNotEmpty ?? false)
+          .toList();
+      sightingsFeed.value = await _enrichResultsWithLocalThumbnails(
+        imageResults,
+      );
     } catch (e) {
       // Silently fail or log for feed
     } finally {
@@ -83,7 +96,8 @@ class DiscoveryService extends GetxService {
   }
 
   Future<List<SearchResultModel>> _enrichResultsWithLocalThumbnails(
-      List<SearchResultModel> results) async {
+    List<SearchResultModel> results,
+  ) async {
     final enriched = <SearchResultModel>[];
 
     for (var result in results) {

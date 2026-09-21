@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'dart:io';
 
 import 'package:get/get.dart';
+
 import '../models/search_result_model.dart';
 import '../models/observation_model.dart';
 import '../../core/services/discovery_service.dart';
@@ -50,14 +52,14 @@ class SearchResultCard extends StatelessWidget {
           ? Image.file(
               File(url),
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Center(
+              errorBuilder: (_, _, _) => const Center(
                 child: Icon(Icons.broken_image_rounded, size: 20),
               ),
             )
           : Image.network(
               url,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Center(
+              errorBuilder: (_, _, _) => const Center(
                 child: Icon(Icons.broken_image_rounded, size: 20),
               ),
               loadingBuilder: (context, child, progress) {
@@ -89,31 +91,7 @@ class SearchResultCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Thumbnail & Timestamp stack
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  _buildThumbnail(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    margin: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      result.isTimestampApproximate
-                          ? '~${result.formattedTimestamp}'
-                          : result.formattedTimestamp,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              _buildThumbnail(),
               const SizedBox(width: 12),
 
               // Title and metadata details
@@ -172,7 +150,7 @@ class SearchResultCard extends StatelessWidget {
                         ],
                         Flexible(
                           child: Text(
-                            result.videoFileName,
+                            'Image result from ${result.videoFileName}',
                             style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFFA0AEC0),
@@ -185,12 +163,18 @@ class SearchResultCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     OutlinedButton.icon(
-                      icon: const Icon(Icons.science_rounded, size: 14),
-                      label: const Text('Save Observation', style: TextStyle(fontSize: 11)),
+                      icon: const Icon(Icons.bookmark_add_rounded, size: 14),
+                      label: const Text(
+                        'Save Image',
+                        style: TextStyle(fontSize: 11),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF1B4D3E),
                         side: const BorderSide(color: Color(0xFF1B4D3E)),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -201,20 +185,22 @@ class SearchResultCard extends StatelessWidget {
               ),
 
               const SizedBox(width: 8),
-              
+
               // Bookmark and Arrow
               Column(
                 children: [
-                  Obx(() => IconButton(
-                        icon: Icon(
-                          discoveryService.isBookmarked(result)
-                              ? Icons.bookmark_rounded
-                              : Icons.bookmark_border_rounded,
-                          color: const Color(0xFF1B4D3E),
-                          size: 20,
-                        ),
-                        onPressed: () => discoveryService.toggleBookmark(result),
-                      )),
+                  Obx(
+                    () => IconButton(
+                      icon: Icon(
+                        discoveryService.isBookmarked(result)
+                            ? Icons.bookmark_rounded
+                            : Icons.bookmark_border_rounded,
+                        color: const Color(0xFF1B4D3E),
+                        size: 20,
+                      ),
+                      onPressed: () => discoveryService.toggleBookmark(result),
+                    ),
+                  ),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -240,14 +226,21 @@ class SearchResultCard extends StatelessWidget {
   void _showSaveObservationDialog(BuildContext context) {
     String guessedSpecies = 'Wildlife';
     final queryLower = result.query.toLowerCase();
-    if (queryLower.contains('elephant')) guessedSpecies = 'Elephant';
-    else if (queryLower.contains('bird')) guessedSpecies = 'Bird';
-    else if (queryLower.contains('lion')) guessedSpecies = 'Lion';
-    else if (queryLower.contains('antelope')) guessedSpecies = 'Antelope';
-    else if (queryLower.contains('bear')) guessedSpecies = 'Bear';
-    else if (queryLower.contains('human') || queryLower.contains('people')) guessedSpecies = 'Human';
-    else if (result.query.isNotEmpty) {
-      guessedSpecies = result.query.split(' ').first.capitalizeFirst ?? result.query;
+    if (queryLower.contains('elephant')) {
+      guessedSpecies = 'Elephant';
+    } else if (queryLower.contains('bird')) {
+      guessedSpecies = 'Bird';
+    } else if (queryLower.contains('lion')) {
+      guessedSpecies = 'Lion';
+    } else if (queryLower.contains('antelope')) {
+      guessedSpecies = 'Antelope';
+    } else if (queryLower.contains('bear')) {
+      guessedSpecies = 'Bear';
+    } else if (queryLower.contains('human') || queryLower.contains('people')) {
+      guessedSpecies = 'Human';
+    } else if (result.query.isNotEmpty) {
+      guessedSpecies =
+          result.query.split(' ').first.capitalizeFirst ?? result.query;
     }
 
     final controller = TextEditingController(text: guessedSpecies);
@@ -261,20 +254,22 @@ class SearchResultCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Enter the species name or category for this observation:',
+              'Enter the animal or category for this image:',
               style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               decoration: const InputDecoration(
-                labelText: 'Species / Category',
+                labelText: 'Animal / Category',
                 hintText: 'e.g. Elephant, Bird, Lion',
               ),
             ),
             const SizedBox(height: 12),
-            Text('Video: ${result.videoFileName}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-            Text('Timestamp: ${result.formattedTimestamp}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+            Text(
+              'Source: ${result.videoFileName}',
+              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            ),
           ],
         ),
         actions: [
@@ -283,7 +278,10 @@ class SearchResultCard extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B4D3E), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1B4D3E),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               final speciesName = controller.text.trim();
               if (speciesName.isEmpty) {

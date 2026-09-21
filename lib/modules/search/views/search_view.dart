@@ -6,6 +6,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../shared/widgets/search_result_card.dart';
+import '../../../shared/widgets/fullscreen_image_viewer.dart';
 import '../controllers/search_controller.dart';
 
 class SearchView extends GetView<SearchViewController> {
@@ -26,19 +27,21 @@ class SearchView extends GetView<SearchViewController> {
                 color: Color(0xFF64748B),
               ),
             ),
-            Obx(() => Row(
-                  children: [
-                    const Text(
-                      'Global Archive',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                    ),
-                    Switch.adaptive(
-                      value: controller.isGlobalSearch.value,
-                      onChanged: (v) => controller.isGlobalSearch.value = v,
-                      activeTrackColor: const Color(0xFF1B4D3E),
-                    ),
-                  ],
-                )),
+            Obx(
+              () => Row(
+                children: [
+                  const Text(
+                    'Global Archive',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                  Switch.adaptive(
+                    value: controller.isGlobalSearch.value,
+                    onChanged: (v) => controller.isGlobalSearch.value = v,
+                    activeTrackColor: const Color(0xFF1B4D3E),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -96,11 +99,11 @@ class SearchView extends GetView<SearchViewController> {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final isCompact = constraints.maxWidth < 420;
-                    
+
                     final imagePreview = Obx(() {
                       final file = controller.referenceImage.value;
                       if (file == null) return const SizedBox.shrink();
-                      
+
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: Stack(
@@ -320,7 +323,10 @@ class SearchView extends GetView<SearchViewController> {
                           final item = controller.searchResults[index];
                           return SearchResultCard(
                             result: item,
-                            onTap: () => controller.watchMoment(item),
+                            onTap: () => FullscreenImageViewer.show(
+                              context,
+                              item.thumbnailUrl,
+                            ),
                           );
                         },
                       ),

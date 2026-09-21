@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:localstore/localstore.dart';
+
 import '../../shared/models/observation_model.dart';
-import '../../shared/models/species_model.dart';
 
 class ResearchService extends GetxService {
   final _db = Localstore.instance;
@@ -9,7 +9,8 @@ class ResearchService extends GetxService {
   static const String _searchCollection = 'search_history';
 
   final observations = <ObservationModel>[].obs;
-  final searchHistory = <Map<String, dynamic>>[].obs; // contains 'query' and 'timestamp'
+  final searchHistory =
+      <Map<String, dynamic>>[].obs; // contains 'query' and 'timestamp'
 
   @override
   void onInit() {
@@ -37,7 +38,10 @@ class ResearchService extends GetxService {
             .map((e) => Map<String, dynamic>.from(e.value))
             .toList();
         // Sort newest first
-        loadedSearches.sort((a, b) => (b['timestamp'] as String).compareTo(a['timestamp'] as String));
+        loadedSearches.sort(
+          (a, b) =>
+              (b['timestamp'] as String).compareTo(a['timestamp'] as String),
+        );
         searchHistory.assignAll(loadedSearches);
       }
     } catch (_) {
@@ -47,10 +51,12 @@ class ResearchService extends GetxService {
 
   Future<bool> saveObservation(ObservationModel obs) async {
     // Prevent exact duplicate based on species, videoName, and timestampMs
-    final exists = observations.any((o) =>
-        o.species.toLowerCase() == obs.species.toLowerCase() &&
-        o.videoName == obs.videoName &&
-        (o.timestampMs - obs.timestampMs).abs() < 1000);
+    final exists = observations.any(
+      (o) =>
+          o.species.toLowerCase() == obs.species.toLowerCase() &&
+          o.videoName == obs.videoName &&
+          (o.timestampMs - obs.timestampMs).abs() < 1000,
+    );
 
     if (exists) {
       return false; // Already exists
@@ -67,7 +73,7 @@ class ResearchService extends GetxService {
 
   Future<void> logSearch(String query) async {
     if (query.trim().isEmpty) return;
-    
+
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     final timestamp = DateTime.now().toIso8601String();
     final searchData = {
@@ -80,32 +86,6 @@ class ResearchService extends GetxService {
       await _db.collection(_searchCollection).doc(id).set(searchData);
       searchHistory.insert(0, searchData);
     } catch (_) {}
-  }
-
-  List<SpeciesModel> getDerivedSpecies() {
-    final groups = <String, List<ObservationModel>>{};
-    for (final obs in observations) {
-      final key = obs.species.trim().capitalizeFirst ?? obs.species.trim();
-      groups.putIfAbsent(key, () => []).add(obs);
-    }
-
-    final speciesList = <SpeciesModel>[];
-    groups.forEach((name, obsList) {
-      final uniqueVideos = obsList.map((o) => o.videoName).toSet().length;
-      final latestDate = obsList.map((o) => o.createdAt).reduce((a, b) => a.isAfter(b) ? a : b);
-      
-      speciesList.add(SpeciesModel(
-        name: name,
-        observationCount: obsList.length,
-        videoCount: uniqueVideos,
-        lastObserved: latestDate,
-        observations: obsList,
-      ));
-    });
-
-    // Sort by observation count descending
-    speciesList.sort((a, b) => b.observationCount.compareTo(a.observationCount));
-    return speciesList;
   }
 
   int getMonthlySearchCount() {

@@ -1,15 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../app/routes/app_routes.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/services/video_service.dart';
 import '../../../core/services/vmodal_service.dart';
 import '../../../core/services/research_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/utils/thumbnail_utils.dart';
 import '../../../shared/models/search_result_model.dart';
 import '../../../shared/models/video_model.dart';
 
@@ -49,9 +51,7 @@ class SearchViewController extends GetxController {
 
   Future<void> pickReferenceImage() async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.image,
-      );
+      final result = await FilePicker.pickFiles(type: FileType.image);
 
       if (result.isNotEmpty) {
         final file = result.first;
@@ -75,12 +75,16 @@ class SearchViewController extends GetxController {
     final image = referenceImage.value;
 
     if (query.isEmpty && image == null) {
-      SnackbarUtils.showInfo('Please enter a search query or pick a reference image.');
+      SnackbarUtils.showInfo(
+        'Please enter a search query or pick a reference image.',
+      );
       return;
     }
 
     if (!vmodalService.isConfigured) {
-      SnackbarUtils.showError('V-Modal SDK is not configured. Please add an API key.');
+      SnackbarUtils.showError(
+        'V-Modal SDK is not configured. Please add an API key.',
+      );
       return;
     }
 
@@ -140,10 +144,7 @@ class SearchViewController extends GetxController {
         videoPath: video.filePath,
       );
 
-      // Filter out low-relevance results to ensure search quality
-      final filteredResults = searchResults.where((res) {
-        return res.score >= AppConstants.minRelevanceScore;
-      }).toList();
+      final filteredResults = searchResults.toList();
 
       // Resolve thumbnails for results
       final updatedResults = await vmodalService.resolveThumbnails(
@@ -151,13 +152,26 @@ class SearchViewController extends GetxController {
         collectionName: video.collectionName,
       );
 
-      final finalResults = updatedResults.map((res) {
-        final match = videoService.videoHistory.firstWhereOrNull((v) => v.fileName == res.videoFileName);
+      final finalResults = <SearchResultModel>[];
+      for (var result in updatedResults) {
+        final match = videoService.videoHistory.firstWhereOrNull(
+          (v) => v.fileName == result.videoFileName,
+        );
         if (match != null) {
-          return res.copyWith(videoPath: match.filePath);
+          result = result.copyWith(videoPath: match.filePath);
         }
-        return res;
-      }).toList();
+        if ((result.thumbnailUrl?.trim().isEmpty ?? true) &&
+            result.videoPath.isNotEmpty) {
+          final localThumbnail = await ThumbnailUtils.generateVideoThumbnail(
+            videoPath: result.videoPath,
+            timeMs: result.timestampMs,
+          );
+          if (localThumbnail != null) {
+            result = result.copyWith(thumbnailUrl: localThumbnail);
+          }
+        }
+        finalResults.add(result);
+      }
 
       searchResults.value = finalResults;
     } on SearchException catch (e) {
@@ -169,29 +183,6 @@ class SearchViewController extends GetxController {
     } finally {
       isSearching.value = false;
     }
-  }
-
-  void watchMoment(SearchResultModel result) {
-    final path = result.videoPath.isNotEmpty ? result.videoPath : (currentVideo?.filePath ?? '');
-    final name = result.videoFileName.isNotEmpty ? result.videoFileName : (currentVideo?.fileName ?? 'Wildlife Footage');
-
-    if (path.isEmpty || !File(path).existsSync()) {
-      SnackbarUtils.showError('Video file path is not available or file does not exist locally.');
-      return;
-    }
-
-    Get.toNamed(
-      AppRoutes.player,
-      arguments: {
-        'videoPath': path,
-        'videoName': name,
-        'timestamp': result.timestampDuration,
-        'timestampText': result.formattedTimestamp,
-        'title': result.title,
-        'hasTimestamp': result.hasTimestamp,
-        'isTimestampApproximate': result.isTimestampApproximate,
-      },
-    );
   }
 
   @override

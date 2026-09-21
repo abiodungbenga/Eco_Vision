@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../../app/routes/app_routes.dart';
 import '../../../core/services/video_service.dart';
 import '../../../core/services/vmodal_service.dart';
 import '../../../core/services/discovery_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../shared/models/video_model.dart';
-import '../../../shared/models/search_result_model.dart';
 
 class HomeController extends GetxController {
   final VModalService vmodalService = Get.find<VModalService>();
@@ -47,35 +47,6 @@ class HomeController extends GetxController {
     }
   }
 
-  void playMoment(SearchResultModel result) {
-    // Determine the video path. Priority: 
-    // 1. Path already in result (from previous search in current session)
-    // 2. Current active video if filenames match
-    String? path = result.videoPath.isNotEmpty ? result.videoPath : null;
-    
-    if (path == null && currentVideo != null && result.videoFileName == currentVideo!.fileName) {
-      path = currentVideo!.filePath;
-    }
-
-    if (path == null || path.isEmpty) {
-      SnackbarUtils.showInfo('Select the video "${result.videoFileName}" in the archive to play.');
-      return;
-    }
-
-    Get.toNamed(
-      AppRoutes.player,
-      arguments: {
-        'videoPath': path,
-        'videoName': result.videoFileName,
-        'timestamp': result.timestampDuration,
-        'timestampText': result.formattedTimestamp,
-        'title': result.title,
-        'hasTimestamp': result.hasTimestamp,
-        'isTimestampApproximate': result.isTimestampApproximate,
-      },
-    );
-  }
-
   void goToUpload() {
     Get.toNamed(AppRoutes.upload);
   }
@@ -86,15 +57,13 @@ class HomeController extends GetxController {
       return;
     }
     if (!hasIndexedVideo) {
-      SnackbarUtils.showInfo('Please upload and index a video footage before searching.');
+      SnackbarUtils.showInfo(
+        'Please upload and index a video footage before searching.',
+      );
       Get.toNamed(AppRoutes.upload);
       return;
     }
     Get.toNamed(AppRoutes.search);
-  }
-
-  void goToObservations() {
-    Get.toNamed(AppRoutes.observations);
   }
 
   void goToDashboard() {
