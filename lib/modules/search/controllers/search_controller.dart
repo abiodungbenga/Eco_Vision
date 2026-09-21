@@ -8,6 +8,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/services/video_service.dart';
 import '../../../core/services/vmodal_service.dart';
+import '../../../core/services/research_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../shared/models/search_result_model.dart';
 import '../../../shared/models/video_model.dart';
@@ -118,6 +119,10 @@ class SearchViewController extends GetxController {
       executionTimeMs.value = response.executionTimeMs;
       totalMatches.value = response.cntTotal;
 
+      if (query.isNotEmpty) {
+        Get.find<ResearchService>().logSearch(query);
+      }
+
       // Collected first, then resolved together: in-video offsets are derived
       // from the earliest timestamp across the whole response.
       final hits = <Map<String, dynamic>>[];
@@ -140,7 +145,16 @@ class SearchViewController extends GetxController {
         searchResults,
         collectionName: video.collectionName,
       );
-      searchResults.value = updatedResults;
+
+      final finalResults = updatedResults.map((res) {
+        final match = videoService.videoHistory.firstWhereOrNull((v) => v.fileName == res.videoFileName);
+        if (match != null) {
+          return res.copyWith(videoPath: match.filePath);
+        }
+        return res;
+      }).toList();
+
+      searchResults.value = finalResults;
     } on SearchException catch (e) {
       // VModalService already translated API failures (including the
       // missing-LanceDB 404) into a message worth showing.
@@ -153,17 +167,19 @@ class SearchViewController extends GetxController {
   }
 
   void watchMoment(SearchResultModel result) {
-    final video = currentVideo;
-    if (video == null || video.filePath.isEmpty) {
-      SnackbarUtils.showError('Video file path is not available.');
+    final path = result.videoPath.isNotEmpty ? result.videoPath : (currentVideo?.filePath ?? '');
+    final name = result.videoFileName.isNotEmpty ? result.videoFileName : (currentVideo?.fileName ?? 'Wildlife Footage');
+
+    if (path.isEmpty || !File(path).existsSync()) {
+      SnackbarUtils.showError('Video file path is not available or file does not exist locally.');
       return;
     }
 
     Get.toNamed(
       AppRoutes.player,
       arguments: {
-        'videoPath': video.filePath,
-        'videoName': video.fileName,
+        'videoPath': path,
+        'videoName': name,
         'timestamp': result.timestampDuration,
         'timestampText': result.formattedTimestamp,
         'title': result.title,

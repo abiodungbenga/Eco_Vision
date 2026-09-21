@@ -181,18 +181,40 @@ class SearchResultModel {
   }) {
     final readings = hits.map(_readTimestamp).toList(growable: false);
 
-    int? baselineMs;
-    for (final reading in readings) {
-      final absolute = reading.absoluteMs;
+    final baselines = <String, int>{};
+    for (var i = 0; i < hits.length; i++) {
+      final map = hits[i];
+      final videoName = _extractFirstText(map, [
+        'filename',
+        'filename_sanitized',
+        'video_filename',
+        'video',
+        'source_path',
+        'path',
+      ]);
+      final absolute = readings[i].absoluteMs;
       if (absolute == null) continue;
-      if (baselineMs == null || absolute < baselineMs) baselineMs = absolute;
+      final currentBaseline = baselines[videoName];
+      if (currentBaseline == null || absolute < currentBaseline) {
+        baselines[videoName] = absolute;
+      }
     }
 
     final results = <SearchResultModel>[];
     for (var i = 0; i < hits.length; i++) {
+      final map = hits[i];
+      final videoName = _extractFirstText(map, [
+        'filename',
+        'filename_sanitized',
+        'video_filename',
+        'video',
+        'source_path',
+        'path',
+      ]);
+      final baselineMs = baselines[videoName];
       results.add(
         _fromHit(
-          hits[i],
+          map,
           reading: readings[i],
           baselineMs: baselineMs,
           query: query,

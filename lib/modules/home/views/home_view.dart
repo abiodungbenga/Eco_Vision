@@ -337,23 +337,51 @@ class HomeView extends GetView<HomeController> {
                   isSecondary: true,
                   onPressed: controller.goToSearch,
                 );
+                final observationsButton = AppButton(
+                  label: 'Species Library',
+                  icon: Icons.pets_rounded,
+                  isSecondary: true,
+                  onPressed: controller.goToObservations,
+                );
+                final dashboardButton = AppButton(
+                  label: 'Dashboard',
+                  icon: Icons.bar_chart_rounded,
+                  isSecondary: true,
+                  onPressed: controller.goToDashboard,
+                );
 
-                if (constraints.maxWidth < 400) {
+                if (constraints.maxWidth < 500) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       uploadButton,
                       const SizedBox(height: 10),
                       searchButton,
+                      const SizedBox(height: 10),
+                      observationsButton,
+                      const SizedBox(height: 10),
+                      dashboardButton,
                     ],
                   );
                 }
 
-                return Row(
+                return Column(
                   children: [
-                    Expanded(child: uploadButton),
-                    const SizedBox(width: 14),
-                    Expanded(child: searchButton),
+                    Row(
+                      children: [
+                        Expanded(child: uploadButton),
+                        const SizedBox(width: 14),
+                        Expanded(child: searchButton),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: observationsButton),
+                        const SizedBox(width: 14),
+                        Expanded(child: dashboardButton),
+                      ],
+                    ),
                   ],
                 );
               },

@@ -3,6 +3,7 @@ import '../../core/services/indexing_service.dart';
 import '../../core/services/video_service.dart';
 import '../../core/services/vmodal_service.dart';
 import '../../core/services/discovery_service.dart';
+import '../../core/services/research_service.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -17,5 +18,6 @@ class InitialBinding extends Bindings {
       permanent: true,
     );
     Get.put<DiscoveryService>(DiscoveryService(), permanent: true);
+    Get.put<ResearchService>(ResearchService(), permanent: true);
   }
 }

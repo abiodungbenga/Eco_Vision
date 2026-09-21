@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:get/get.dart';
 import '../models/search_result_model.dart';
+import '../models/observation_model.dart';
 import '../../core/services/discovery_service.dart';
+import '../../core/services/research_service.dart';
 
 class SearchResultCard extends StatelessWidget {
   final SearchResultModel result;
@@ -181,6 +183,19 @@ class SearchResultCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 6),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.science_rounded, size: 14),
+                      label: const Text('Save Observation', style: TextStyle(fontSize: 11)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1B4D3E),
+                        side: const BorderSide(color: Color(0xFF1B4D3E)),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () => _showSaveObservationDialog(context),
+                    ),
                   ],
                 ),
               ),
@@ -218,6 +233,100 @@ class SearchResultCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showSaveObservationDialog(BuildContext context) {
+    String guessedSpecies = 'Wildlife';
+    final queryLower = result.query.toLowerCase();
+    if (queryLower.contains('elephant')) guessedSpecies = 'Elephant';
+    else if (queryLower.contains('bird')) guessedSpecies = 'Bird';
+    else if (queryLower.contains('lion')) guessedSpecies = 'Lion';
+    else if (queryLower.contains('antelope')) guessedSpecies = 'Antelope';
+    else if (queryLower.contains('bear')) guessedSpecies = 'Bear';
+    else if (queryLower.contains('human') || queryLower.contains('people')) guessedSpecies = 'Human';
+    else if (result.query.isNotEmpty) {
+      guessedSpecies = result.query.split(' ').first.capitalizeFirst ?? result.query;
+    }
+
+    final controller = TextEditingController(text: guessedSpecies);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Save Research Observation'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter the species name or category for this observation:',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Species / Category',
+                hintText: 'e.g. Elephant, Bird, Lion',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text('Video: ${result.videoFileName}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+            Text('Timestamp: ${result.formattedTimestamp}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B4D3E), foregroundColor: Colors.white),
+            onPressed: () async {
+              final speciesName = controller.text.trim();
+              if (speciesName.isEmpty) {
+                return;
+              }
+              Navigator.pop(context);
+
+              final researchService = Get.find<ResearchService>();
+              final obs = ObservationModel(
+                id: 'obs_${DateTime.now().millisecondsSinceEpoch}',
+                species: speciesName,
+                videoId: result.id,
+                videoName: result.videoFileName,
+                videoPath: result.videoPath,
+                timestampMs: result.timestampMs,
+                formattedTimestamp: result.formattedTimestamp,
+                searchQuery: result.query,
+                createdAt: DateTime.now(),
+                thumbnailUrl: result.thumbnailUrl,
+              );
+
+              final success = await researchService.saveObservation(obs);
+              if (success) {
+                Get.snackbar(
+                  'Success',
+                  'Observation saved under $speciesName',
+                  backgroundColor: const Color(0xFFF0FDF4),
+                  colorText: const Color(0xFF15803D),
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              } else {
+                Get.snackbar(
+                  'Info',
+                  'This observation is already saved.',
+                  backgroundColor: const Color(0xFFFFFBEB),
+                  colorText: const Color(0xFFB45309),
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }

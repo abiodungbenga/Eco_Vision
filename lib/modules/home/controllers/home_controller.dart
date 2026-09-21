@@ -93,6 +93,14 @@ class HomeController extends GetxController {
     Get.toNamed(AppRoutes.search);
   }
 
+  void goToObservations() {
+    Get.toNamed(AppRoutes.observations);
+  }
+
+  void goToDashboard() {
+    Get.toNamed(AppRoutes.dashboard);
+  }
+
   @override
   void onClose() {
     apiKeyController.dispose();
