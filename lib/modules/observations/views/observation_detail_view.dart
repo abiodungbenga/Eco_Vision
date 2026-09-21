@@ -45,7 +45,7 @@ class ObservationDetailView extends StatelessWidget {
               itemBuilder: (context, index) {
                 final obs = species.observations[index];
                 return Card(
-                  margin: const EdgeInsets.bottom(12),
+                  margin: const EdgeInsets.only(bottom: 12),
                   elevation: 1,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   child: Padding(

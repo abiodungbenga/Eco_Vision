@@ -39,7 +39,7 @@ class VideoService extends GetxService {
   VideoModel? get currentVideo => _currentVideo.value;
 
   final RxList<VideoModel> _videoHistory = <VideoModel>[].obs;
-  List<VideoModel> get videoHistory => _videoHistory;
+  RxList<VideoModel> get videoHistory => _videoHistory;
 
   /// Pick a video file from local storage using file_picker.
   Future<VideoModel?> pickVideo() async {

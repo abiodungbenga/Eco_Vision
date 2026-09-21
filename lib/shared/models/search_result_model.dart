@@ -41,6 +41,7 @@ class SearchResultModel {
   final bool hasTimestamp;
 
   final String scoreText;
+  final double score;
   final String videoFileName;
   final String videoPath;
   final String? thumbnailUrl;
@@ -58,6 +59,7 @@ class SearchResultModel {
     required this.isTimestampApproximate,
     required this.hasTimestamp,
     required this.scoreText,
+    required this.score,
     required this.videoFileName,
     required this.videoPath,
     this.thumbnailUrl,
@@ -77,6 +79,7 @@ class SearchResultModel {
       'isTimestampApproximate': isTimestampApproximate,
       'hasTimestamp': hasTimestamp,
       'scoreText': scoreText,
+      'score': score,
       'videoFileName': videoFileName,
       'videoPath': videoPath,
       'thumbnailUrl': thumbnailUrl,
@@ -97,6 +100,7 @@ class SearchResultModel {
       isTimestampApproximate: json['isTimestampApproximate'],
       hasTimestamp: json['hasTimestamp'],
       scoreText: json['scoreText'],
+      score: (json['score'] as num?)?.toDouble() ?? 0.0,
       videoFileName: json['videoFileName'],
       videoPath: json['videoPath'],
       thumbnailUrl: json['thumbnailUrl'],
@@ -117,6 +121,7 @@ class SearchResultModel {
       isTimestampApproximate: isTimestampApproximate,
       hasTimestamp: hasTimestamp,
       scoreText: scoreText,
+      score: score,
       videoFileName: videoFileName,
       videoPath: videoPath ?? this.videoPath,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
@@ -269,7 +274,8 @@ class SearchResultModel {
     }
 
     final formattedTs = DurationUtils.formatDuration(duration);
-    final scoreStr = _extractScore(map);
+    final scoreValue = _extractRawScore(map);
+    final scoreStr = _formatScore(scoreValue);
 
     final idStr =
         map['id']?.toString() ??
@@ -292,6 +298,7 @@ class SearchResultModel {
       isTimestampApproximate: approximate,
       hasTimestamp: resolved,
       scoreText: scoreStr,
+      score: scoreValue,
       videoFileName: videoName,
       videoPath: videoPath,
       rawHit: map,
@@ -366,12 +373,14 @@ class SearchResultModel {
     return '';
   }
 
-  static String _extractScore(Map<String, dynamic> row) {
-    final scoreUi = row['score_ui'];
-    if (scoreUi is num && scoreUi.isFinite && scoreUi >= 0 && scoreUi <= 1) {
-      return '${(scoreUi * 100).toStringAsFixed(1)}%';
+  static String _formatScore(double score) {
+    if (score >= 0 && score <= 1) {
+      return '${(score * 100).toStringAsFixed(1)}%';
     }
+    return score.toStringAsFixed(2);
+  }
 
+  static double _extractRawScore(Map<String, dynamic> row) {
     for (final key in [
       'score_ui',
       'score',
@@ -381,14 +390,9 @@ class SearchResultModel {
     ]) {
       final val = row[key];
       if (val is num && val.isFinite) {
-        if (val >= 0 && val <= 1) {
-          return '${(val * 100).toStringAsFixed(1)}%';
-        }
-        return val.toStringAsFixed(2);
+        return val.toDouble();
       }
-      final s = '${val ?? ''}'.trim();
-      if (s.isNotEmpty) return s;
     }
-    return '';
+    return 0.0;
   }
 }

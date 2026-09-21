@@ -61,7 +61,7 @@ class ObservationsView extends GetView<ObservationsController> {
           itemBuilder: (context, index) {
             final species = controller.speciesList[index];
             return Card(
-              margin: const EdgeInsets.bottom(14),
+              margin: const EdgeInsets.only(bottom: 14),
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(

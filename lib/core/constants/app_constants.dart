@@ -8,6 +8,10 @@ class AppConstants {
   static const String defaultStreamName = 'nature_footage';
   static const String defaultIndexType = 'vid_img_emb';
 
+  /// Minimum relevance score (0.0 to 1.0) for a search result to be shown.
+  /// Results below this are considered unrelated and filtered out.
+  static const double minRelevanceScore = 0.18;
+
   // Research-themed semantic chips
   static const List<Map<String, String>> semanticChips = [
     {'label': '🐾 Predation', 'query': 'hunting predation animal attack'},

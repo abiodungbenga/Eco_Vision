@@ -140,9 +140,14 @@ class SearchViewController extends GetxController {
         videoPath: video.filePath,
       );
 
+      // Filter out low-relevance results to ensure search quality
+      final filteredResults = searchResults.where((res) {
+        return res.score >= AppConstants.minRelevanceScore;
+      }).toList();
+
       // Resolve thumbnails for results
       final updatedResults = await vmodalService.resolveThumbnails(
-        searchResults,
+        filteredResults,
         collectionName: video.collectionName,
       );
 
