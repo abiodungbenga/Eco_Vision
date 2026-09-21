@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 import 'package:get/get.dart';
 import '../models/search_result_model.dart';
@@ -14,6 +15,63 @@ class SearchResultCard extends StatelessWidget {
     required this.onTap,
   });
 
+  Widget _buildThumbnail() {
+    final url = result.thumbnailUrl;
+    if (url == null || url.isEmpty) {
+      return Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: const Icon(
+          Icons.image_not_supported_rounded,
+          color: Color(0xFFA0AEC0),
+          size: 24,
+        ),
+      );
+    }
+
+    final isLocal = !url.startsWith('http') && !url.startsWith('https');
+
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDF2F7),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: isLocal
+          ? Image.file(
+              File(url),
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Center(
+                child: Icon(Icons.broken_image_rounded, size: 20),
+              ),
+            )
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Center(
+                child: Icon(Icons.broken_image_rounded, size: 20),
+              ),
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final discoveryService = Get.find<DiscoveryService>();
@@ -25,49 +83,36 @@ class SearchResultCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12.0),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Timestamp Badge Container
-              Container(
-                width: 76,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1B4D3E),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.play_circle_fill_rounded,
-                      color: Colors.white,
-                      size: 24,
+              // Thumbnail & Timestamp stack
+              Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  _buildThumbnail(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    margin: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      // '~' flags an offset derived from a baseline rather than
-                      // reported directly, so the badge doesn't imply precision
-                      // the backend never gave us.
+                    child: Text(
                       result.isTimestampApproximate
                           ? '~${result.formattedTimestamp}'
                           : result.formattedTimestamp,
                       style: const TextStyle(
                         color: Colors.white,
+                        fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        letterSpacing: 0.5,
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
 
               // Title and metadata details
               Expanded(

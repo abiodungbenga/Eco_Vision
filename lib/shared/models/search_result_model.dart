@@ -104,7 +104,7 @@ class SearchResultModel {
     );
   }
 
-  SearchResultModel copyWith({String? thumbnailUrl}) {
+  SearchResultModel copyWith({String? thumbnailUrl, String? videoPath}) {
     return SearchResultModel(
       id: id,
       query: query,
@@ -118,7 +118,7 @@ class SearchResultModel {
       hasTimestamp: hasTimestamp,
       scoreText: scoreText,
       videoFileName: videoFileName,
-      videoPath: videoPath,
+      videoPath: videoPath ?? this.videoPath,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       rawHit: rawHit,
     );

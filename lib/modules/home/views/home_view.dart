@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:get/get.dart';
 
 import '../../../core/constants/app_constants.dart';
@@ -80,6 +81,19 @@ class HomeView extends GetView<HomeController> {
   }
 
   Widget _buildMomentCard(SearchResultModel result) {
+    final thumbUrl = result.thumbnailUrl;
+    ImageProvider? thumbImage;
+    if (thumbUrl != null && thumbUrl.isNotEmpty) {
+      if (thumbUrl.startsWith('http')) {
+        thumbImage = NetworkImage(thumbUrl);
+      } else {
+        thumbImage = FileImage(File(thumbUrl));
+      }
+    } else {
+      thumbImage = const NetworkImage(
+          'https://images.unsplash.com/photo-1549366021-9f761d450616?auto=format&fit=crop&q=80&w=400');
+    }
+
     return GestureDetector(
       onTap: () => controller.playMoment(result),
       child: Container(
@@ -104,16 +118,15 @@ class HomeView extends GetView<HomeController> {
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                  image: result.thumbnailUrl != null
-                      ? DecorationImage(
-                          image: NetworkImage(result.thumbnailUrl!),
-                          fit: BoxFit.cover,
-                        )
-                      : const DecorationImage(
-                          image: NetworkImage('https://images.unsplash.com/photo-1549366021-9f761d450616?auto=format&fit=crop&q=80&w=400'),
-                          fit: BoxFit.cover,
-                        ),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(14)),
+                  image: DecorationImage(
+                    image: thumbImage,
+                    fit: BoxFit.cover,
+                    onError: (exception, stackTrace) {
+                      // Fallback if image fails to load
+                    },
+                  ),
                 ),
                 child: Stack(
                   children: [
@@ -127,11 +140,13 @@ class HomeView extends GetView<HomeController> {
                                   : Icons.bookmark_border_rounded,
                               color: Colors.white,
                             ),
-                            onPressed: () => controller.discoveryService.toggleBookmark(result),
+                            onPressed: () =>
+                                controller.discoveryService.toggleBookmark(result),
                           )),
                     ),
                     Center(
-                      child: Icon(Icons.play_circle_fill_rounded, color: Colors.white.withValues(alpha: 0.8), size: 42),
+                      child: Icon(Icons.play_circle_fill_rounded,
+                          color: Colors.white.withValues(alpha: 0.8), size: 42),
                     ),
                   ],
                 ),

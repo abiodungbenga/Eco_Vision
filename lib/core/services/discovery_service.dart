@@ -2,9 +2,12 @@ import 'package:get/get.dart';
 import 'package:localstore/localstore.dart';
 import '../../shared/models/search_result_model.dart';
 import 'vmodal_service.dart';
+import 'video_service.dart';
+import '../utils/thumbnail_utils.dart';
 
 class DiscoveryService extends GetxService {
   final VModalService vmodalService = Get.find<VModalService>();
+  final VideoService videoService = Get.find<VideoService>();
   final _db = Localstore.instance;
   static const String _collectionPath = 'observations';
 
@@ -24,7 +27,7 @@ class DiscoveryService extends GetxService {
       final loaded = items.entries
           .map((e) => SearchResultModel.fromJson(e.value))
           .toList();
-      savedObservations.assignAll(loaded);
+      savedObservations.assignAll(await _enrichResultsWithLocalThumbnails(loaded));
     }
   }
 
@@ -52,8 +55,11 @@ class DiscoveryService extends GetxService {
         videoPath: '', 
       );
 
-      // Resolve thumbnails for discovery feed
-      sightingsFeed.value = await vmodalService.resolveThumbnails(results);
+      // Resolve thumbnails for discovery feed from backend
+      final remoteResults = await vmodalService.resolveThumbnails(results);
+
+      // Override with local thumbnails where possible (using video_snapshot_generator)
+      sightingsFeed.value = await _enrichResultsWithLocalThumbnails(remoteResults);
     } catch (e) {
       // Silently fail or log for feed
     } finally {
@@ -74,5 +80,38 @@ class DiscoveryService extends GetxService {
 
   bool isBookmarked(SearchResultModel result) {
     return savedObservations.any((o) => o.id == result.id);
+  }
+
+  Future<List<SearchResultModel>> _enrichResultsWithLocalThumbnails(
+      List<SearchResultModel> results) async {
+    final enriched = <SearchResultModel>[];
+
+    for (var result in results) {
+      String? path = result.videoPath.isNotEmpty ? result.videoPath : null;
+
+      // Try to find local path from history if not present
+      if (path == null) {
+        final localVideo = videoService.videoHistory.firstWhereOrNull(
+          (v) => v.fileName == result.videoFileName,
+        );
+        if (localVideo != null) {
+          path = localVideo.filePath;
+          result = result.copyWith(videoPath: path);
+        }
+      }
+
+      // If we have a local path, try generating a local thumbnail
+      if (path != null && path.isNotEmpty) {
+        final localThumb = await ThumbnailUtils.generateVideoThumbnail(
+          videoPath: path,
+          timeMs: result.timestampMs,
+        );
+        if (localThumb != null) {
+          result = result.copyWith(thumbnailUrl: localThumb);
+        }
+      }
+      enriched.add(result);
+    }
+    return enriched;
   }
 }
