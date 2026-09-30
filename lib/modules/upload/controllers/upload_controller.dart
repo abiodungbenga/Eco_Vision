@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:get/get.dart';
 import 'package:vmodal_sdk_flutter/vmodal_sdk_flutter.dart' hide Routes;
+import 'package:video_player/video_player.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/services/indexing_service.dart';
@@ -22,6 +23,11 @@ class UploadController extends GetxController {
   final uploadProgress = 0.0.obs;
 
   final _isUploading = false.obs;
+
+  VideoPlayerController? previewPlayerController;
+  final isPreviewInitialized = false.obs;
+  final isPreviewPlaying = false.obs;
+  final previewError = ''.obs;
 
   /// True while either half of the flow is running. Indexing state is read from
   /// the service, so returning to this screen mid-job still shows a busy UI.
@@ -48,6 +54,7 @@ class UploadController extends GetxController {
     super.onInit();
     if (currentVideo != null) {
       _updateStatusFromVideo(currentVideo!);
+      unawaited(_initializePreview(currentVideo!));
     }
   }
 
@@ -72,6 +79,56 @@ class UploadController extends GetxController {
     }
   }
 
+  Future<void> _initializePreview(VideoModel video) async {
+    final oldController = previewPlayerController;
+    oldController?.removeListener(_previewListener);
+    previewPlayerController = null;
+    isPreviewInitialized.value = false;
+    isPreviewPlaying.value = false;
+    previewError.value = '';
+    await oldController?.dispose();
+
+    if (!File(video.filePath).existsSync()) {
+      previewError.value = 'The selected video is no longer available.';
+      return;
+    }
+
+    final player = VideoPlayerController.file(File(video.filePath));
+    previewPlayerController = player;
+
+    try {
+      await player.initialize();
+      if (previewPlayerController != player) {
+        await player.dispose();
+        return;
+      }
+      player.addListener(_previewListener);
+      isPreviewInitialized.value = true;
+    } catch (e) {
+      if (previewPlayerController == player) {
+        previewPlayerController = null;
+        previewError.value = 'Preview could not be loaded: $e';
+      }
+      await player.dispose();
+    }
+  }
+
+  void _previewListener() {
+    final player = previewPlayerController;
+    if (player == null) return;
+    isPreviewPlaying.value = player.value.isPlaying;
+  }
+
+  void togglePreview() {
+    final player = previewPlayerController;
+    if (player == null || !isPreviewInitialized.value) return;
+    if (player.value.isPlaying) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  }
+
   Future<void> selectVideo() async {
     try {
       final video = await videoService.pickVideo();
@@ -80,6 +137,7 @@ class UploadController extends GetxController {
         indexingService.reset();
         _localStatus.value =
             'Selected: ${video.fileName} (${video.formattedSize})';
+        await _initializePreview(video);
       }
     } catch (e) {
       SnackbarUtils.showError(e.toString());
@@ -244,7 +302,17 @@ class UploadController extends GetxController {
     uploadProgress.value = 0.0;
     indexingService.reset();
     _localStatus.value = 'Select a wildlife video to analyze.';
+    _disposePreview();
     videoService.clearCurrentVideo();
+  }
+
+  void _disposePreview() {
+    final player = previewPlayerController;
+    player?.removeListener(_previewListener);
+    player?.dispose();
+    previewPlayerController = null;
+    isPreviewInitialized.value = false;
+    isPreviewPlaying.value = false;
   }
 
   void goToSearch() {
@@ -257,6 +325,7 @@ class UploadController extends GetxController {
     // running on IndexingService after this controller is disposed.
     _uploadTask?.cancel();
     _progressSub?.cancel();
+    _disposePreview();
     super.onClose();
   }
 }

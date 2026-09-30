@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../../core/widgets/app_button.dart';
 import '../../../shared/models/video_model.dart';
@@ -172,6 +173,10 @@ class UploadView extends GetView<UploadController> {
                             ),
                         ],
                       ),
+                      const SizedBox(height: 16),
+
+                      _buildVideoPreview(),
+                      const SizedBox(height: 16),
                     ],
                   ],
                 ),
@@ -342,6 +347,127 @@ class UploadView extends GetView<UploadController> {
         ),
       ),
     );
+  }
+
+  Widget _buildVideoPreview() {
+    return Obx(() {
+      if (controller.previewError.value.isNotEmpty) {
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF7ED),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFED7AA)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFFC2410C)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  controller.previewError.value,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF9A3412),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      final player = controller.previewPlayerController;
+      if (!controller.isPreviewInitialized.value || player == null) {
+        return Container(
+          height: 180,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        );
+      }
+
+      final aspectRatio = player.value.aspectRatio > 0
+          ? player.value.aspectRatio
+          : 16 / 9;
+
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            AspectRatio(
+              aspectRatio: aspectRatio,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  VideoPlayer(player),
+                  GestureDetector(
+                    onTap: controller.togglePreview,
+                    behavior: HitTestBehavior.opaque,
+                    child: AnimatedOpacity(
+                      opacity: controller.isPreviewPlaying.value ? 0 : 1,
+                      duration: const Duration(milliseconds: 200),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: const BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 34,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            VideoProgressIndicator(
+              player,
+              allowScrubbing: true,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              colors: const VideoProgressColors(
+                playedColor: Color(0xFF81C784),
+                bufferedColor: Color(0xFF64748B),
+                backgroundColor: Color(0xFF334155),
+              ),
+            ),
+            SizedBox(
+              height: 42,
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: controller.isPreviewPlaying.value
+                        ? 'Pause preview'
+                        : 'Play preview',
+                    onPressed: controller.togglePreview,
+                    icon: Icon(
+                      controller.isPreviewPlaying.value
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const Text(
+                    'Preview selected video',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Future<void> _confirmReplace(BuildContext context) async {

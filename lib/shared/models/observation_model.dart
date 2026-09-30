@@ -9,6 +9,7 @@ class ObservationModel {
   final String searchQuery;
   final DateTime createdAt;
   final String? thumbnailUrl;
+  final String? notes;
 
   const ObservationModel({
     required this.id,
@@ -21,6 +22,7 @@ class ObservationModel {
     required this.searchQuery,
     required this.createdAt,
     this.thumbnailUrl,
+    this.notes,
   });
 
   Map<String, dynamic> toJson() {
@@ -35,6 +37,7 @@ class ObservationModel {
       'searchQuery': searchQuery,
       'createdAt': createdAt.toIso8601String(),
       'thumbnailUrl': thumbnailUrl,
+      'notes': notes,
     };
   }
 
@@ -48,8 +51,11 @@ class ObservationModel {
       timestampMs: json['timestampMs'] ?? 0,
       formattedTimestamp: json['formattedTimestamp'] ?? '00:00',
       searchQuery: json['searchQuery'] ?? '',
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
       thumbnailUrl: json['thumbnailUrl'],
+      notes: json['notes'],
     );
   }
 }

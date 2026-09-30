@@ -30,83 +30,92 @@ class DashboardView extends GetView<DashboardController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Research Dashboard')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Good morning / afternoon',
-              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Your Environmental Research Overview',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+      body: SafeArea(
+        bottom: true,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Obx(
+                () => Text(
+                  controller.greeting.value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 4),
+              const Text(
+                'Your Environmental Research Overview',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 16),
 
-            // Statistics Grid (Responsive layouts)
-            Obx(
-              () => GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.4,
-                children: [
-                  _buildStatCard(
-                    '${controller.videosAnalyzed.value}',
-                    'Videos analyzed',
-                    Icons.video_library_rounded,
-                    const Color(0xFFEBF8FF),
-                    const Color(0xFF2B6CB0),
-                  ),
-                  _buildStatCard(
-                    '${controller.observationCount.value}',
-                    'Observations saved',
-                    Icons.science_rounded,
-                    const Color(0xFFF0FDF4),
-                    const Color(0xFF16A34A),
-                  ),
-                  _buildStatCard(
-                    '${controller.monthlySearchCount.value}',
-                    'Searches this month',
-                    Icons.search_rounded,
-                    const Color(0xFFFFFBEB),
-                    const Color(0xFFD97706),
-                  ),
-                ],
+              // Statistics Grid (Responsive layouts)
+              Obx(
+                () => GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.4,
+                  children: [
+                    _buildStatCard(
+                      '${controller.videosAnalyzed.value}',
+                      'Videos analyzed',
+                      Icons.video_library_rounded,
+                      const Color(0xFFEBF8FF),
+                      const Color(0xFF2B6CB0),
+                    ),
+                    _buildStatCard(
+                      '${controller.observationCount.value}',
+                      'Observations saved',
+                      Icons.science_rounded,
+                      const Color(0xFFF0FDF4),
+                      const Color(0xFF16A34A),
+                    ),
+                    _buildStatCard(
+                      '${controller.monthlySearchCount.value}',
+                      'Searches this month',
+                      Icons.search_rounded,
+                      const Color(0xFFFFFBEB),
+                      const Color(0xFFD97706),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Recent Observations Section
-            const Text(
-              'Recent Observations',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+              // Recent Observations Section
+              const Text(
+                'Recent Observations',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Obx(() {
-              if (controller.recentObservations.isEmpty) {
-                return _buildEmptySection('No recent observations saved.');
-              }
-              return Column(
-                children: controller.recentObservations
-                    .map((obs) => _buildRecentObservationTile(context, obs))
-                    .toList(),
-              );
-            }),
-          ],
+              const SizedBox(height: 10),
+              Obx(() {
+                if (controller.recentObservations.isEmpty) {
+                  return _buildEmptySection('No recent observations saved.');
+                }
+                return Column(
+                  children: controller.recentObservations
+                      .map((obs) => _buildRecentObservationTile(context, obs))
+                      .toList(),
+                );
+              }),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
@@ -179,14 +188,20 @@ class DashboardView extends GetView<DashboardController> {
           child: SizedBox(
             width: 56,
             height: 56,
-            child: obs.thumbnailUrl == null || obs.thumbnailUrl!.isEmpty
-                ? const Icon(Icons.image_not_supported_outlined)
-                : Image(
-                    image: obs.thumbnailUrl!.startsWith('http')
-                        ? NetworkImage(obs.thumbnailUrl!)
-                        : FileImage(File(obs.thumbnailUrl!)),
-                    fit: BoxFit.cover,
-                  ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                color: const Color(0xFFF1F5F9),
+                child: obs.thumbnailUrl == null || obs.thumbnailUrl!.isEmpty
+                    ? const Icon(Icons.image_not_supported_outlined)
+                    : Image(
+                        image: obs.thumbnailUrl!.startsWith('http')
+                            ? NetworkImage(obs.thumbnailUrl!)
+                            : FileImage(File(obs.thumbnailUrl!)),
+                        fit: BoxFit.cover,
+                      ),
+              ),
+            ),
           ),
         ),
         title: Text(
@@ -198,8 +213,12 @@ class DashboardView extends GetView<DashboardController> {
           ),
         ),
         subtitle: Text(
-          'Saved image from ${obs.videoName}',
+          obs.notes?.isNotEmpty == true
+              ? obs.notes!
+              : 'Saved image from ${obs.videoName}',
           style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

@@ -244,33 +244,46 @@ class SearchResultCard extends StatelessWidget {
     }
 
     final controller = TextEditingController(text: guessedSpecies);
+    final notesController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Save Research Observation'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter the animal or category for this image:',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Animal / Category',
-                hintText: 'e.g. Elephant, Bird, Lion',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter the animal or category for this image:',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Source: ${result.videoFileName}',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'Animal / Category',
+                  hintText: 'e.g. Elephant, Bird, Lion',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: notesController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Field notes (optional)',
+                  hintText: 'e.g. Near the river at sunrise',
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Source: ${result.videoFileName}',
+                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -301,6 +314,9 @@ class SearchResultCard extends StatelessWidget {
                 searchQuery: result.query,
                 createdAt: DateTime.now(),
                 thumbnailUrl: result.thumbnailUrl,
+                notes: notesController.text.trim().isEmpty
+                    ? null
+                    : notesController.text.trim(),
               );
 
               final success = await researchService.saveObservation(obs);
