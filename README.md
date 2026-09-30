@@ -4,6 +4,21 @@ Search wildlife footage by meaning. Find the moments that matter.
 
 WildSense is a premium proof-of-concept demonstrating how environmental researchers can use the **V-Modal Flutter SDK** to upload wildlife footage, index it, and perform semantic searches to find specific moments using natural language.
 
+<div align="center">
+
+## 📲 Android App Download
+
+<a href="https://drive.google.com/file/d/1zLxiWbnAvKU0aHRR_UHyRVtONWquO-er/view?usp=sharing" target="_blank">
+  <img src="https://img.shields.io/badge/Android-Download%20APK-34A853?style=for-the-badge&logo=android&logoColor=white" alt="Download WildSense Android APK" width="260" />
+</a>
+
+<p>
+  <strong>Latest Android build</strong><br>
+  Install the APK to test the latest Wildlife Intelligence experience on Android.
+</p>
+
+</div>
+
 ## Features
 
 - **Wildlife Library**: View and manage field research footage.
@@ -66,11 +81,13 @@ WildSense is designed for long-term field research with robust data handling:
 
 1. **V-Modal API Key**:
    Obtain an API key from V-Modal and configure it via dart-define:
+
    ```bash
    flutter run --dart-define=VMODAL_API_KEY=your_api_key --dart-define=VMODAL_PROJECT_ID=your_project_id
    ```
 
 2. **Dependencies**:
+
    ```bash
    flutter pub get
    ```
